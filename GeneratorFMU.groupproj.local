@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2018/07/18 18:12:48.000.684,C:\Users\Walter\Documents\Embarcadero\Studio\Projects\ProjectGroup1.groupproj=E:\FMU\TesteBuilderDLL\ProjectGroup1.groupproj</Transaction>
+    <Transaction>2018/07/19 16:11:01.000.805,E:\FMU\TesteBuilderDLL\ProjectGroup1.groupproj=E:\FMU\GeneratorFMU\GeneratorFMU.groupproj</Transaction>
+  </Transactions>
+	<Default.Personality>
+		<Projects ActiveProject="F:\2018\FMU\GeneratorFMU\GenerateFMU.cbproj"/>
+	</Default.Personality>
+</BorlandProject>

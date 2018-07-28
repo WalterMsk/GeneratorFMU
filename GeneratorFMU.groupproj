@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{4628A915-0981-48A5-B848-4274EB1EEC24}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="GenerateFMU.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="PythonModel.cbproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="GenerateFMU">
+        <MSBuild Projects="GenerateFMU.cbproj"/>
+    </Target>
+    <Target Name="GenerateFMU:Clean">
+        <MSBuild Projects="GenerateFMU.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="GenerateFMU:Make">
+        <MSBuild Projects="GenerateFMU.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="PythonModel">
+        <MSBuild Projects="PythonModel.cbproj"/>
+    </Target>
+    <Target Name="PythonModel:Clean">
+        <MSBuild Projects="PythonModel.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="PythonModel:Make">
+        <MSBuild Projects="PythonModel.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="GenerateFMU;PythonModel"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="GenerateFMU:Clean;PythonModel:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="GenerateFMU:Make;PythonModel:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
