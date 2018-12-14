@@ -78,6 +78,7 @@ typedef struct {
 	fmiCallbackFunctions functions;
 	fmiBoolean loggingOn;
 	ModelState state;
+	PyObject* stateObj;
 #ifdef FMI_COSIMULATION
 	fmiEventInfo eventInfo;
 #endif

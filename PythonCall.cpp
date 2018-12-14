@@ -364,6 +364,9 @@ bool initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
 		eventInfo->upcomingTimeEvent   = fmiTrue;
 		eventInfo->nextEventTime       = 1 + comp->time;
 
+        //save initialize object as state object
+		comp->stateObj = myModule;
+
 	}catch(...)
 	{
 		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python interface initialization");
@@ -411,8 +414,13 @@ void eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
 
 		comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Getting python main() function...");
 		PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+
 		comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Calling function main()");
-		PyObject_CallObject(myFunction, 0);
+		//buid tuple with args
+		PyObject* stateTuple = PyTuple_New(1);
+		PyTuple_SetItem(stateTuple, 0, comp->stateObj);
+		//call eventUpdate.main(state)
+		PyObject_CallObject(myFunction, stateTuple);
 		PrintPyOutErr(c,comp,catcher);
 
 		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
@@ -460,7 +468,7 @@ bool Finalize(fmiComponent c, ModelInstance* comp)
 		PrintPyOutErr(c,comp,catcher);
 
 		if (myModule != 0) {
-			//run initialize main
+			//run finalize main
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
 			PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
 			PrintPyOutErr(c,comp,catcher);
@@ -477,6 +485,7 @@ bool Finalize(fmiComponent c, ModelInstance* comp)
 		Py_DECREF(myModuleString);
 		//Py_DECREF(catcher);
 		//Py_DECREF(pModule);
+		Py_DECREF(comp->stateObj); // free the initialized python state
 		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Finalizing embedded python interface");
 	    //Py_Finalize();
 
