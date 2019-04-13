@@ -114,9 +114,11 @@ void TForm1::CreateTempFolder()
 		if ((fileExt == ".py") || (fileExt == ".c") || (fileExt == ".cpp") || (fileExt == ".h") || (fileExt == ".idf"))
 			CopyFileA(file.c_str(),std::string("temp\\sources\\" + fileName).c_str(), false);
 		if ((fileExt == ".png") || (fileExt == ".html"))
-			CopyFileA(file.c_str(),std::string("temp\\documentation\\" + fileName).c_str(), false);						
+			CopyFileA(file.c_str(),std::string("temp\\documentation\\" + fileName).c_str(), false);
 	}
-	CopyFileA("PythonModel.dll",std::string("temp\\binaries\\win32\\PythonModel.dll").c_str(), false);	
+	CopyFileA("bin\\PythonModel.dll",std::string("temp\\binaries\\win32\\PythonModel.dll").c_str(), false);
+	CopyFileA("bin\\python27.dll",std::string("temp\\binaries\\win32\\python27.dll").c_str(), false);
+	CopyFileA("bin\\python27_xe.lib",std::string("temp\\binaries\\win32\\python27_xe.lib").c_str(), false);
 }
 //---------------------------------------------------------------------------
 

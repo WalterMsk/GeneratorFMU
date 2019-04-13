@@ -26,6 +26,7 @@
 #include <fstream>
 #include <Python.h>
 #include <vector>
+#include <string>
 
 int WINAPI DllEntryPoint(HINSTANCE hinst, unsigned long reason, void* lpReserved)
 {
@@ -313,77 +314,111 @@ void UpdateOutputVariables(fmiComponent c, ModelInstance* comp, PyObject* myModu
 
 // called by fmiInitialize() after setting eventInfo to defaults
 // Used to set the first time event, if any.
-bool initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
+fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
 {
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Initializing Python");
-	Py_Initialize();
-	//prepare to collect python outputs and errors
-	PyObject *pModule = PyImport_AddModule("__main__");
-	PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+	//Program name
+	Py_SetProgramName("PythonModel");
 
-	try {
-		//Set path to source files
-		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Setting path ..\\..\\sources");
-		PyObject* myPath = PySys_GetObject("path");
-		PyObject* myPathString = PyString_FromString((char*)"..\\..\\sources");
-		int res = PyList_Append(myPath, myPathString);
-
-		PyObject* myModuleString = PyString_FromString((char*)"initialize");
-		comp->functions.logger(c, comp->instanceName, fmiOK, "log",
-										"Importing python initialize module...");
-		PyObject* myModule = PyImport_Import(myModuleString);
-		PrintPyOutErr(c,comp,catcher);
-
-		if (myModule != 0) {
-			//update real, int, bool and string values em python code
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Input Variables...");
-			UpdateInputVariables(c,comp,myModule);
-			PrintPyOutErr(c,comp,catcher);
-
-			//run initialize main
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
-			PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
-			PyObject_CallObject(myFunction, 0);
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Terminou de chamar main()");
-			PrintPyOutErr(c,comp,catcher);
-
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
-			UpdateOutputVariables(c,comp,myModule);
-			PrintPyOutErr(c,comp,catcher);
-
-			// Clean up
-			//Py_DECREF(result);
-			Py_DECREF(myFunction);
-			//Py_DECREF(myModule);
+	//Set Python Home
+	if (comp->strValues.size() > 0)
+		if (comp->strValues[0].value != "") {// first string is always the python path
+			char *pythonPath = new char(sizeof(comp->strValues[0].value));
+			strcpy(pythonPath,comp->strValues[0].value);
+			Py_SetPythonHome(pythonPath);
 		}
-		Py_DECREF(myModuleString);
-		//Py_DECREF(myPath);   // não limpar o path, da erro
-		Py_DECREF(myPathString);
-		//Setting config for time event step
-		eventInfo->upcomingTimeEvent   = fmiTrue;
-		eventInfo->nextEventTime       = 1 + comp->time;
 
-        //save initialize object as state object
-		comp->stateObj = myModule;
+	//Print info header
+	std::string headerString = "\n#### Program and system information ####\n";
+	headerString = headerString + "\nProgram Name: %s\nPrefix: %s\nExec Prefix: %s\n" +
+		"Program Full Path: %s\nPath: %s\nVersion: %s\nPlatform: %s\nCompiler: %s\n" +
+		"Build Info: %s\nPython Home: %s\n";
+	comp->functions.logger(c, comp->instanceName, fmiOK, "log",headerString.c_str(),
+		Py_GetProgramName(),Py_GetPrefix(),Py_GetExecPrefix(),Py_GetProgramFullPath(),
+		Py_GetPath(),Py_GetVersion(),Py_GetPlatform(),Py_GetCompiler(),
+		Py_GetBuildInfo(),Py_GetPythonHome());
 
-	}catch(...)
-	{
-		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python interface initialization");
-		PrintPyOutErr(c, comp,catcher);
-		Py_XDECREF(catcher);
-		//Py_XDECREF(pModule);
-		return false;
+   //Check if python path is ok, there is a bug in the Py_Initialize and it will
+   //close everthing if using a invalid python path
+	ifstream file(std::string(std::string(Py_GetPrefix()) + std::string("\\Python.exe")).c_str());
+	if (!file) {
+		comp->functions.logger(c, comp->instanceName, fmiError, "log", "It is not possible to locate Python.exe!");
+		return fmiError;
 	}
-	if (catcher == 0) {
-		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Ahh??");
-	}
-	if (pModule == 0) {
-		comp->functions.logger(c, comp->instanceName, fmiError, "log", "why??");
+
+	//initialize python interface
+	Py_Initialize();
+
+	if (Py_IsInitialized()) {
+		//prepare to collect python outputs and errors
+		PyObject *pModule = PyImport_AddModule("__main__");
+		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+
+		try {
+			//Set path to source files
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Setting path ..\\..\\sources");
+			PyObject* myPath = PySys_GetObject("path");
+			PyObject* myPathString = PyString_FromString((char*)"..\\..\\sources");
+			int res = PyList_Append(myPath, myPathString);
+
+			//Run initialize module
+			PyObject* myModuleString = PyString_FromString((char*)"initialize");
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+											"Importing python initialize module...");
+			PyObject* myModule = PyImport_Import(myModuleString);
+			PrintPyOutErr(c,comp,catcher);
+
+			if (myModule != 0) {
+				//update real, int, bool and string values em python code
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Input Variables...");
+				UpdateInputVariables(c,comp,myModule);
+				PrintPyOutErr(c,comp,catcher);
+
+				//run initialize main
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
+				PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
+				PyObject_CallObject(myFunction, 0);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Terminou de chamar main()");
+				PrintPyOutErr(c,comp,catcher);
+
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
+				UpdateOutputVariables(c,comp,myModule);
+				PrintPyOutErr(c,comp,catcher);
+
+				// Clean up
+				//Py_DECREF(result);
+				Py_DECREF(myFunction);
+				//Py_DECREF(myModule);
+			}
+			Py_DECREF(myModuleString);
+			//Py_DECREF(myPath);   // não limpar o path, da erro
+			Py_DECREF(myPathString);
+			//Setting config for time event step
+			eventInfo->upcomingTimeEvent   = fmiTrue;
+			eventInfo->nextEventTime       = 1 + comp->time;
+
+			//save initialize object as state object
+			comp->stateObj = myModule;
+
+		}catch(...)
+		{
+			comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python interface initialization");
+			PrintPyOutErr(c, comp,catcher);
+			Py_XDECREF(catcher);
+			//Py_XDECREF(pModule);
+			return fmiError;
+		}
+		if (catcher == 0) {
+			comp->functions.logger(c, comp->instanceName, fmiError, "log", "Ahh??");
+		}
+		if (pModule == 0) {
+			comp->functions.logger(c, comp->instanceName, fmiError, "log", "why??");
+		}
 	}
 	//Py_DECREF(catcher);
 	//Py_DECREF(pModule);
-	return true;
+	return fmiOK;
 }
 //------------------------------------------------------------------------------
 
@@ -394,111 +429,115 @@ fmiReal getEventIndicator(ModelInstance* comp, int z)
 }
 
 // Used to set the next time event, if any.
-void eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
+fmiStatus eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
 {
-	//prepare to collect python outputs and errors
-	PyObject *pModule = PyImport_AddModule("__main__");
-	PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+	if (Py_IsInitialized()) {
+		//prepare to collect python outputs and errors
+		PyObject *pModule = PyImport_AddModule("__main__");
+		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
 
-	try {
-		PyObject* myModuleString = PyString_FromString((char*)"eventUpdate");
+		try {
+			PyObject* myModuleString = PyString_FromString((char*)"eventUpdate");
 
-		comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Importing EventUpdate python module...");
-		PyObject* myModule = PyImport_Import(myModuleString);
-		PrintPyOutErr(c,comp,catcher);
+			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Importing EventUpdate python module...");
+			PyObject* myModule = PyImport_Import(myModuleString);
+			PrintPyOutErr(c,comp,catcher);
 
-		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Input Variables...");
-		//update real, int, bool and string values em python code
-		UpdateInputVariables(c,comp, myModule);
-		PrintPyOutErr(c,comp,catcher);
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Input Variables...");
+			//update real, int, bool and string values em python code
+			UpdateInputVariables(c,comp, myModule);
+			PrintPyOutErr(c,comp,catcher);
 
-		comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Getting python main() function...");
-		PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Getting python main() function...");
+			PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"main");
 
-		comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Calling function main()");
-		//buid tuple with args
-		PyObject* stateTuple = PyTuple_New(1);
-		PyTuple_SetItem(stateTuple, 0, comp->stateObj);
-		//call eventUpdate.main(state)
-		PyObject_CallObject(myFunction, stateTuple);
-		PrintPyOutErr(c,comp,catcher);
+			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Calling function main()");
+			//buid tuple with args
+			PyObject* stateTuple = PyTuple_New(1);
+			PyTuple_SetItem(stateTuple, 0, comp->stateObj);
+			//call eventUpdate.main(state)
+			PyObject_CallObject(myFunction, stateTuple);
+			PrintPyOutErr(c,comp,catcher);
 
-		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
-		UpdateOutputVariables(c,comp,myModule);
-		PrintPyOutErr(c,comp,catcher);
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
+			UpdateOutputVariables(c,comp,myModule);
+			PrintPyOutErr(c,comp,catcher);
 
-		// Clean up
-		Py_DECREF(myFunction);
-		//Py_DECREF(myModule);
-		Py_DECREF(myModuleString);
-		//Py_DECREF(catcher);
-		//Py_DECREF(pModule);
+			// Clean up
+			Py_DECREF(myFunction);
+			//Py_DECREF(myModule);
+			Py_DECREF(myModuleString);
+			//Py_DECREF(catcher);
+			//Py_DECREF(pModule);
+		}
+		catch(...)
+		{
+			comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python eventUpdate");
+			PrintPyOutErr(c, comp,catcher);
+			eventInfo->terminateSimulation = fmiTrue;
+			Py_XDECREF(catcher);
+			//Py_XDECREF(pModule);
+			return fmiError;
+		}
+
 	}
-	catch(...)
-	{
-		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python eventUpdate");
-		PrintPyOutErr(c, comp,catcher);
-		eventInfo->terminateSimulation = fmiTrue;
-		Py_XDECREF(catcher);
-		//Py_XDECREF(pModule);
-		return;
-	}
-
 	//Setting config for time event step
 	eventInfo->upcomingTimeEvent   = fmiTrue;
 	eventInfo->nextEventTime       = 1 + comp->time;
 	eventInfo->iterationConverged  = fmiTrue;
 	eventInfo->terminateSimulation = fmiFalse;
-	return;
+	return fmiOK;
  }
 
 //
-bool Finalize(fmiComponent c, ModelInstance* comp)
+fmiStatus Finalize(fmiComponent c, ModelInstance* comp)
 {
-	//prepare to collect python outputs and errors
-	PyObject *pModule = PyImport_AddModule("__main__");
-	PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+	if (Py_IsInitialized()) {
+		//prepare to collect python outputs and errors
+		PyObject *pModule = PyImport_AddModule("__main__");
+		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
 
-	try {
-		comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Finalizing Python");
-		PyObject* myModuleString = PyString_FromString((char*)"finalize");
-		comp->functions.logger(c,comp->instanceName, fmiOK, "log",
-										"Importing finalize python module...");
-		PyObject* myModule = PyImport_Import(myModuleString);
-		PrintPyOutErr(c,comp,catcher);
-
-		if (myModule != 0) {
-			//run finalize main
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
-			PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+		try {
+			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Finalizing Python");
+			PyObject* myModuleString = PyString_FromString((char*)"finalize");
+			comp->functions.logger(c,comp->instanceName, fmiOK, "log",
+											"Importing finalize python module...");
+			PyObject* myModule = PyImport_Import(myModuleString);
 			PrintPyOutErr(c,comp,catcher);
 
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
-			PyObject_CallObject(myFunction, 0);
-			PrintPyOutErr(c,comp,catcher);
+			if (myModule != 0) {
+				//run finalize main
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
+				PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+				PrintPyOutErr(c,comp,catcher);
 
-			// Clean up
-			//Py_DECREF(result);
-			//Py_DECREF(myModule);
-			Py_DECREF(myFunction);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
+				PyObject_CallObject(myFunction, 0);
+				PrintPyOutErr(c,comp,catcher);
+
+				// Clean up
+				//Py_DECREF(result);
+				//Py_DECREF(myModule);
+				Py_DECREF(myFunction);
+			}
+			Py_DECREF(myModuleString);
+			//Py_DECREF(catcher);
+			//Py_DECREF(pModule);
+			Py_DECREF(comp->stateObj); // free the initialized python state
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Finalizing embedded python interface");
+			//Py_Finalize();
+
+		}catch(...)
+		{
+			comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python finalization interface ");
+			PrintPyOutErr(c,comp,catcher);
+			Py_XDECREF(catcher);
+			//Py_XDECREF(pModule);
+			//Py_Finalize();
+			return fmiError;
 		}
-		Py_DECREF(myModuleString);
-		//Py_DECREF(catcher);
-		//Py_DECREF(pModule);
-		Py_DECREF(comp->stateObj); // free the initialized python state
-		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Finalizing embedded python interface");
-	    //Py_Finalize();
-
-	}catch(...)
-	{
-		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python finalization interface ");
-		PrintPyOutErr(c,comp,catcher);
-		Py_XDECREF(catcher);
-		//Py_XDECREF(pModule);
-	    //Py_Finalize();
-		return false;
-	}
-	return true;
+    }
+	return fmiOK;
 }
 //------------------------------------------------------------------------------
 
