@@ -25,7 +25,7 @@
    - October 16, 2010: First public Version
 
 
-   Copyright © 2008-2010, MODELISAR consortium. All rights reserved.
+   Copyright(c) 2017, MODELICA Association Project FMI. All rights reserved.
    This file is licensed by the copyright holders under the BSD License
    (http://www.opensource.org/licenses/bsd-license.html):
 
@@ -63,7 +63,7 @@
 
 #if defined(__BORLANDC__)
 #define DllExport __declspec( dllexport )
-#elif defined(_MSC_VER)
+#ifdef _MSC_VER
 #define DllExport __declspec( dllexport )
 #else
 #define DllExport
@@ -116,9 +116,10 @@ Functions for FMI for Co-Simulation
 #define fmiVersion "1.0"
 
 /* make sure all compiler use the same alignment policies for structures */
-#if defined(_MSC_VER) || defined(__BORLANDC__)
+#ifdef WIN32
 #pragma pack(push,8)
 #endif
+
 
 /* Type definitions */
      typedef enum {fmiOK,
@@ -151,7 +152,7 @@ Functions for FMI for Co-Simulation
    } fmiEventInfo;
 
 /* reset alignment policy to the one set before reading this file */
-#if defined(_MSC_VER) || defined(__BORLANDC__)
+#ifdef WIN32
 #pragma pack(pop)
 #endif
 
