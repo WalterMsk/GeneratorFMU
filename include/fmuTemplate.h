@@ -39,48 +39,48 @@ typedef enum {
 } ModelState;
 
 typedef struct {
-	fmiReal value;
-	fmiValueReference vr;
+    fmiReal value;
+    fmiValueReference vr;
 
 } ValueDefReal;
 
 typedef struct {
-	fmiInteger value;
-	fmiValueReference vr;
+    fmiInteger value;
+    fmiValueReference vr;
 
 } ValueDefInt;
 
 typedef struct {
-	fmiBoolean value;
-	fmiValueReference vr;
+    fmiBoolean value;
+    fmiValueReference vr;
 
 } ValueDefBool;
 
 typedef struct {
-	fmiString value;
-	fmiValueReference vr;
+    fmiString value;
+    fmiValueReference vr;
 
 } ValueDefString;
 
 typedef struct {
-	//fmiReal    *r;
-	//fmiInteger *i;
-	//fmiBoolean *b;
-	//fmiString  *s;
-	std::vector <ValueDefReal> realValues;
-	std::vector <ValueDefInt> intValues;
-	std::vector <ValueDefBool> boolValues;
-	std::vector <ValueDefString> strValues;
-	fmiBoolean *isPositive;
-	fmiReal time;
-	fmiString instanceName;
-	fmiString GUID;
-	fmiCallbackFunctions functions;
-	fmiBoolean loggingOn;
-	ModelState state;
-	PyObject* stateObj;
+    //fmiReal    *r;
+    //fmiInteger *i;
+    //fmiBoolean *b;
+    //fmiString  *s;
+    std::vector <ValueDefReal> realValues;
+    std::vector <ValueDefInt> intValues;
+    std::vector <ValueDefBool> boolValues;
+    std::vector <ValueDefString> strValues;
+    fmiBoolean *isPositive;
+    fmiReal time;
+    fmiString instanceName;
+    fmiString GUID;
+    fmiCallbackFunctions functions;
+    fmiBoolean loggingOn;
+    ModelState state;
+    PyObject* stateObj;
 #ifdef FMI_COSIMULATION
-	fmiEventInfo eventInfo;
+    fmiEventInfo eventInfo;
 #endif
 } ModelInstance;
 

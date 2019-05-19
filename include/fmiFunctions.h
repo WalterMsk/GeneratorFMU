@@ -63,7 +63,7 @@
 
 #if defined(__BORLANDC__)
 #define DllExport __declspec( dllexport )
-#ifdef _MSC_VER
+#elif defined(_MSC_VER)
 #define DllExport __declspec( dllexport )
 #else
 #define DllExport
