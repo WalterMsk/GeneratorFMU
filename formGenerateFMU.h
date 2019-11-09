@@ -21,6 +21,7 @@ __published:	// IDE-managed Components
 	TButton *btnGenerateFMU;
 	TButton *btnAddFiles;
 	TOpenDialog *OpenDialog1;
+	TRadioGroup *rgpVersion;
 	void __fastcall btnGenerateFMUClick(TObject *Sender);
 	void __fastcall btnAddFilesClick(TObject *Sender);
 private:	// User declarations

@@ -56,6 +56,17 @@ object Form1: TForm1
       end
     end
   end
+  object rgpVersion: TRadioGroup
+    Left = 168
+    Top = 200
+    Width = 112
+    Height = 69
+    ItemIndex = 1
+    Items.Strings = (
+      'Python 2.7'
+      'Python 3.8')
+    TabOrder = 1
+  end
   object SaveDialog1: TSaveDialog
     DefaultExt = '.fmu'
     Filter = 'FMU|*.fmu'
@@ -64,7 +75,7 @@ object Form1: TForm1
   end
   object OpenDialog1: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
-    Left = 224
-    Top = 208
+    Left = 120
+    Top = 224
   end
 end

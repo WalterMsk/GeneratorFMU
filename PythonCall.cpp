@@ -28,6 +28,9 @@
 #include <vector>
 #include <string>
 
+#include <iostream>
+#include <sstream>
+
 int WINAPI DllEntryPoint(HINSTANCE hinst, unsigned long reason, void* lpReserved)
 {
 	return 1;
@@ -67,11 +70,11 @@ void PrintPyOutErr(fmiComponent c, ModelInstance* comp, PyObject *catcher)
 	PyErr_Print();
 	//get the stdout and stderr from our catchOutErr object
 	PyObject *output = PyObject_GetAttrString(catcher,"value");
-	std::string pyStr = PyString_AsString(output);
+	std::string pyStr = PyUnicode_AsUTF8(output);
 	if (!pyStr.empty())
 		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Python:\n%s",pyStr.c_str());
 	Py_DECREF(output);
-	PyObject* myString = PyString_FromString((char*)"");
+	PyObject* myString = PyUnicode_FromString((char*)"");
 	PyObject_SetAttrString(catcher,"value",myString);
 	Py_DECREF(myString);
 }
@@ -123,19 +126,19 @@ PyObject* BuildTuple(fmiComponent c, ModelInstance* comp, unsigned type_)
 		PyObject* vrObj;
 		if (type_ == REAL) {
 			obj = PyFloat_FromDouble(comp->realValues[i].value);
-			vrObj = PyInt_FromLong(comp->realValues[i].vr);
+			vrObj = PyLong_FromLong(comp->realValues[i].vr);
 		}
 		if (type_ == INTEGER) {
-			obj = PyInt_FromLong(comp->intValues[i].value);
-			vrObj = PyInt_FromLong(comp->intValues[i].vr);
+			obj = PyLong_FromLong(comp->intValues[i].value);
+			vrObj = PyLong_FromLong(comp->intValues[i].vr);
 		}
 		if (type_ == BOOL) {
 			obj = PyBool_FromLong(comp->boolValues[i].value);
-			vrObj = PyInt_FromLong(comp->boolValues[i].vr);
+			vrObj = PyLong_FromLong(comp->boolValues[i].vr);
 		}
 		if (type_ == STRING) {
-			obj = PyString_FromString(comp->strValues[i].value);
-			vrObj = PyInt_FromLong(comp->strValues[i].vr);
+			obj = PyUnicode_FromString(comp->strValues[i].value);
+			vrObj = PyLong_FromLong(comp->strValues[i].vr);
 		}
 
 		if (obj == 0) {
@@ -175,7 +178,7 @@ void RecoverFromTuples(fmiComponent c, ModelInstance* comp, PyObject* out, unsig
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
 			}
 			if (vr != 0) {
-				newValue.vr = PyInt_AsLong(vr);
+				newValue.vr = PyLong_AsLong(vr);
 			}
 			comp->realValues.push_back(newValue);
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->realValues.size());
@@ -185,11 +188,11 @@ void RecoverFromTuples(fmiComponent c, ModelInstance* comp, PyObject* out, unsig
 			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefInt newValue;
 			if (value != 0) {
-				newValue.value = PyInt_AsLong(value);
+				newValue.value = PyLong_AsLong(value);
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
 			}
 			if (vr != 0) {
-				newValue.vr = PyInt_AsLong(vr);
+				newValue.vr = PyLong_AsLong(vr);
 			}
 			comp->intValues.push_back(newValue);
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->intValues.size());
@@ -199,11 +202,11 @@ void RecoverFromTuples(fmiComponent c, ModelInstance* comp, PyObject* out, unsig
 			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefBool newValue;
 			if (value != 0) {
-				newValue.value = PyInt_AsLong(value);
+				newValue.value = PyLong_AsLong(value);
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
 			}
 			if (vr != 0) {
-				newValue.vr = PyInt_AsLong(vr);
+				newValue.vr = PyLong_AsLong(vr);
 			}
 			comp->boolValues.push_back(newValue);
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->boolValues.size());
@@ -213,11 +216,11 @@ void RecoverFromTuples(fmiComponent c, ModelInstance* comp, PyObject* out, unsig
 			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefString newValue;
 			if (value != 0) {
-				newValue.value = PyString_AsString(value);
+				newValue.value = PyUnicode_AsUTF8(value);
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
 			}
 			if (vr != 0) {
-				newValue.vr = PyInt_AsLong(vr);
+				newValue.vr = PyLong_AsLong(vr);
 			}
 			comp->strValues.push_back(newValue);
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->strValues.size());
@@ -312,20 +315,41 @@ void UpdateOutputVariables(fmiComponent c, ModelInstance* comp, PyObject* myModu
 	Py_DECREF(myFunction);
 }
 
+
+std::wstring widen( const std::string& str )
+{
+	std::wostringstream wstm;
+	const std::ctype<wchar_t>& ctfacet =
+						std::use_facet< std::ctype<wchar_t> >( wstm.getloc() ) ;
+	for( size_t i=0 ; i<str.size() ; ++i )
+			  wstm << ctfacet.widen( str[i] ) ;
+	return wstm.str() ;
+}
+
+std::string narrow( const std::wstring& str )
+{
+	std::ostringstream stm;
+	const std::ctype<char>& ctfacet =
+						 std::use_facet< std::ctype<char> >( stm.getloc() ) ;
+	for( size_t i=0 ; i<str.size() ; ++i )
+				  stm << ctfacet.narrow( str[i], 0 ) ;
+    return stm.str() ;
+}
+
 // called by fmiInitialize() after setting eventInfo to defaults
 // Used to set the first time event, if any.
 fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInfo)
 {
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Initializing Python");
 	//Program name
-	Py_SetProgramName("PythonModel");
+	Py_SetProgramName(L"PythonModel");
 
 	//Set Python Home
 	if (comp->strValues.size() > 0)
 		if (comp->strValues[0].value != "") {// first string is always the python path
 			char *pythonPath = new char(sizeof(comp->strValues[0].value));
 			strcpy(pythonPath,comp->strValues[0].value);
-			Py_SetPythonHome(pythonPath);
+			Py_SetPythonHome(widen(pythonPath).c_str());
 		}
 
 	//Print info header
@@ -340,7 +364,10 @@ fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInf
 
    //Check if python path is ok, there is a bug in the Py_Initialize and it will
    //close everthing if using a invalid python path
-	ifstream file(std::string(std::string(Py_GetPrefix()) + std::string("\\Python.exe")).c_str());
+   std::wstring pythonPath = Py_GetPythonHome();
+   if (pythonPath.empty() == true)
+		pythonPath = Py_GetPrefix();
+	ifstream file(std::string(std::string(narrow(pythonPath).c_str()) + std::string("\\Python.exe")).c_str());
 	if (!file) {
 		comp->functions.logger(c, comp->instanceName, fmiError, "log", "It is not possible to locate Python.exe!");
 		return fmiError;
@@ -358,11 +385,11 @@ fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInf
 			//Set path to source files
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Setting path ..\\..\\sources");
 			PyObject* myPath = PySys_GetObject("path");
-			PyObject* myPathString = PyString_FromString((char*)"..\\..\\sources");
+			PyObject* myPathString = PyUnicode_FromString((char*)"..\\..\\sources");
 			int res = PyList_Append(myPath, myPathString);
 
 			//Run initialize module
-			PyObject* myModuleString = PyString_FromString((char*)"initialize");
+			PyObject* myModuleString = PyUnicode_FromString((char*)"initialize");
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log",
 											"Importing python initialize module...");
 			PyObject* myModule = PyImport_Import(myModuleString);
@@ -437,7 +464,7 @@ fmiStatus eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventIn
 		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
 
 		try {
-			PyObject* myModuleString = PyString_FromString((char*)"eventUpdate");
+			PyObject* myModuleString = PyUnicode_FromString((char*)"eventUpdate");
 
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Importing EventUpdate python module...");
 			PyObject* myModule = PyImport_Import(myModuleString);
@@ -499,7 +526,7 @@ fmiStatus Finalize(fmiComponent c, ModelInstance* comp)
 
 		try {
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Finalizing Python");
-			PyObject* myModuleString = PyString_FromString((char*)"finalize");
+			PyObject* myModuleString = PyUnicode_FromString((char*)"finalize");
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log",
 											"Importing finalize python module...");
 			PyObject* myModule = PyImport_Import(myModuleString);
@@ -512,7 +539,12 @@ fmiStatus Finalize(fmiComponent c, ModelInstance* comp)
 				PrintPyOutErr(c,comp,catcher);
 
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
-				PyObject_CallObject(myFunction, 0);
+
+				//buid tuple with args
+				PyObject* stateTuple = PyTuple_New(1);
+				PyTuple_SetItem(stateTuple, 0, comp->stateObj);
+				//call finalize.main(state)
+				PyObject_CallObject(myFunction, stateTuple);
 				PrintPyOutErr(c,comp,catcher);
 
 				// Clean up

@@ -116,9 +116,18 @@ void TForm1::CreateTempFolder()
 		if ((fileExt == ".png") || (fileExt == ".html"))
 			CopyFileA(file.c_str(),std::string("temp\\documentation\\" + fileName).c_str(), false);
 	}
-	CopyFileA("bin\\PythonModel.dll",std::string("temp\\binaries\\win32\\PythonModel.dll").c_str(), false);
-	CopyFileA("bin\\python27.dll",std::string("temp\\binaries\\win32\\python27.dll").c_str(), false);
-	CopyFileA("bin\\python27_xe.lib",std::string("temp\\binaries\\win32\\python27_xe.lib").c_str(), false);
+
+	std::string version;
+	if (rgpVersion->ItemIndex == 1)
+		version = "python38";
+	else
+		version = "python27";
+	std::string fileOrigin = version + "\\bin\\PythonModel.dll";
+	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\win32\\PythonModel.dll").c_str(), false);
+	fileOrigin = version + "\\bin\\" + version + ".dll";
+	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\win32\\" + version + ".dll").c_str(), false);
+	fileOrigin = version + "\\bin\\" + version +"_xe.lib";
+	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\win32\\" + version +"_xe.lib").c_str(), false);
 }
 //---------------------------------------------------------------------------
 
