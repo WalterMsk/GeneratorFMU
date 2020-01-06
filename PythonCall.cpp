@@ -69,19 +69,19 @@ void PrintPyOutErr(fmiComponent c, ModelInstance* comp, PyObject *catcher)
 	//make python print any errors
 	PyErr_Print();
 	//get the stdout and stderr from our catchOutErr object
-	PyObject *output = PyObject_GetAttrString(catcher,"value");
-	std::string pyStr = PyUnicode_AsUTF8(output);
-	if (!pyStr.empty())
-		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Python:\n%s",pyStr.c_str());
-	Py_DECREF(output);
-	PyObject* myString = PyUnicode_FromString((char*)"");
+	PyObject *output = PyObject_GetAttrString(catcher,"value");   // New reference
+	const char *pyStr = PyUnicode_AsUTF8(output); // not be deallocated.
+	if (strlen(pyStr) > 0)
+		comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Python:\n%s",pyStr);
+	Py_DECREF(output); //ok
+	PyObject* myString = PyUnicode_FromString((char*)""); //New reference.
 	PyObject_SetAttrString(catcher,"value",myString);
-	Py_DECREF(myString);
+	Py_DECREF(myString); //ok
 }
 
 PyObject *InitializePythonStdoutErrRedirect(PyObject *pModule)
 {
-	 std::string stdOutErr =
+	 const char* stdOutErr =
 "import sys\n\
 class CatchOutErr:\n\
 	def __init__(self):\n\
@@ -94,9 +94,9 @@ sys.stderr = catchOutErr\n\
 "; //this is python code to redirect stdouts/stderr
 
 	//invoke code to redirect
-	PyRun_SimpleString(stdOutErr.c_str());
+	PyRun_SimpleString(stdOutErr);
 	//get our catchOutErr created above
-	PyObject *catcher = PyObject_GetAttrString(pModule,"catchOutErr");
+	PyObject *catcher = PyObject_GetAttrString(pModule,"catchOutErr"); //New reference.
 	return catcher;
 }
 
@@ -114,8 +114,8 @@ PyObject* BuildTuple(fmiComponent c, ModelInstance* comp, unsigned type_)
 	if (type_ == STRING)
 		size = comp->strValues.size();
 
-	PyObject* valueTuple = PyTuple_New(size);
-	PyObject* vrTuple = PyTuple_New(size);
+	PyObject* valueTuple = PyTuple_New(size); // New reference. “steals”
+	PyObject* vrTuple = PyTuple_New(size); // New reference. “steals”
 	if ((valueTuple == 0) || (valueTuple == 0)) {
 		// Error
 		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Couldn't create a tuple!");
@@ -125,194 +125,215 @@ PyObject* BuildTuple(fmiComponent c, ModelInstance* comp, unsigned type_)
 		PyObject* obj;
 		PyObject* vrObj;
 		if (type_ == REAL) {
-			obj = PyFloat_FromDouble(comp->realValues[i].value);
-			vrObj = PyLong_FromLong(comp->realValues[i].vr);
+			obj = PyFloat_FromDouble(comp->realValues[i].value);  // New reference. “steals”
+			vrObj = PyLong_FromLong(comp->realValues[i].vr); //New reference. “steals”
 		}
 		if (type_ == INTEGER) {
-			obj = PyLong_FromLong(comp->intValues[i].value);
-			vrObj = PyLong_FromLong(comp->intValues[i].vr);
+			obj = PyLong_FromLong(comp->intValues[i].value); //New reference. “steals”
+			vrObj = PyLong_FromLong(comp->intValues[i].vr); //New reference. “steals”
 		}
 		if (type_ == BOOL) {
-			obj = PyBool_FromLong(comp->boolValues[i].value);
-			vrObj = PyLong_FromLong(comp->boolValues[i].vr);
+			obj = PyBool_FromLong(comp->boolValues[i].value); //New reference. “steals”
+			vrObj = PyLong_FromLong(comp->boolValues[i].vr); //New reference. “steals”
 		}
 		if (type_ == STRING) {
-			obj = PyUnicode_FromString(comp->strValues[i].value);
-			vrObj = PyLong_FromLong(comp->strValues[i].vr);
+			int sizeStr = strlen(comp->strValues[i].value);
+			if (sizeStr == 0) {
+				comp->functions.logger(c, comp->instanceName, fmiError, "log", "String nao deveria ser zero aqui");
+				obj = PyUnicode_FromString((char*)" "); //New reference “steals”
+			} else
+				obj = PyUnicode_FromStringAndSize((char*)comp->strValues[i].value,sizeStr);
+			vrObj = PyLong_FromLong(comp->strValues[i].vr);  //New reference. “steals”
 		}
-
 		if (obj == 0) {
 			// clean up
 			comp->functions.logger(c, comp->instanceName, fmiError, "log",
 									 "Couldn't store a new value in the tuple!");
-			return 0;
+			continue;
 		}
-		PyTuple_SetItem(valueTuple, i, obj);
-		PyTuple_SetItem(vrTuple, i, vrObj);
+		PyTuple_SetItem(valueTuple, i, obj); // “steals” a reference to o.
+		PyTuple_SetItem(vrTuple, i, vrObj); // “steals” a reference to o.
 	}
 
-	PyObject* newTuple = PyTuple_New(2);
-	PyTuple_SetItem(newTuple, 0, valueTuple);
-	PyTuple_SetItem(newTuple, 1, vrTuple);
+	PyObject* newTuple = PyTuple_New(2); // New reference.
+	PyTuple_SetItem(newTuple, 0, valueTuple); // “steals” a reference to o.
+	PyTuple_SetItem(newTuple, 1, vrTuple); // “steals” a reference to o.
 	return newTuple;
 }
 
 // Tuples:
-void RecoverFromTuples(fmiComponent c, ModelInstance* comp, PyObject* out, unsigned type_)
+void RecoverFromTuples(fmiComponent c, ModelInstance* comp, PyObject *catcher,
+						 PyObject* out, unsigned type_)
 {
-	// We create a new Tuple
+	// We created a new Tuple
 	if (!PyTuple_Check(out)) {
 		// Error
 		comp->functions.logger(c, comp->instanceName, fmiError, "log", "Couldn't read the tuple!");
 		return;
 	}
-	PyObject *valueTuple = PyTuple_GetItem(out, 0);
-	PyObject *vrTuple = PyTuple_GetItem(out, 1);
-	for(Py_ssize_t i = 0; i < PyTuple_Size(valueTuple); i++) {
+	PyObject *valueTuple = PyTuple_GetItem(out, 0); // Borrowed reference.
+	PyObject *vrTuple = PyTuple_GetItem(out, 1); // Borrowed reference.
+	Py_INCREF(valueTuple);    /* Prevent valueTuple being deallocated. */
+	Py_INCREF(vrTuple);       /* Prevent vrTuple being deallocated. */
+	Py_ssize_t sizeTuple = PyTuple_Size(valueTuple);
+	if (type_ == STRING)
+		comp->strValues.reserve(comp->strValues.size()+sizeTuple);
+	for(Py_ssize_t i = 0; i < sizeTuple; i++) {
+
+		PyObject *value = PyTuple_GetItem(valueTuple, i); // Borrowed reference.
+		PyObject *vr = PyTuple_GetItem(vrTuple, i); // Borrowed reference.
+		Py_INCREF(value);   /* Prevent being deallocated. */
+		Py_INCREF(vr);   /* Prevent being deallocated. */
 		if (type_ == REAL) {
-			PyObject *value = PyTuple_GetItem(valueTuple, i);
-			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefReal newValue;
 			if (value != 0) {
 				newValue.value = PyFloat_AsDouble(value);
-				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: value = %f!", newValue.value);
 			}
 			if (vr != 0) {
 				newValue.vr = PyLong_AsLong(vr);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: vr = %u ", newValue.vr);
 			}
 			comp->realValues.push_back(newValue);
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->realValues.size());
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num of output elem = %d!",comp->realValues.size());
 		}
 		if (type_ == INTEGER) {
-			PyObject *value = PyTuple_GetItem(valueTuple, i);
-			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefInt newValue;
 			if (value != 0) {
 				newValue.value = PyLong_AsLong(value);
-				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: value = %f!", newValue.value);
 			}
 			if (vr != 0) {
 				newValue.vr = PyLong_AsLong(vr);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: vr = %u ", newValue.vr);
 			}
 			comp->intValues.push_back(newValue);
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->intValues.size());
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num of output elem = %d!",comp->intValues.size());
 		}
 		if (type_ == BOOL) {
-			PyObject *value = PyTuple_GetItem(valueTuple, i);
-			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefBool newValue;
 			if (value != 0) {
 				newValue.value = PyLong_AsLong(value);
-				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: value = %f!", newValue.value);
 			}
 			if (vr != 0) {
 				newValue.vr = PyLong_AsLong(vr);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: vr = %u ", newValue.vr);
 			}
 			comp->boolValues.push_back(newValue);
-			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->boolValues.size());
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num of output elem = %d!",comp->boolValues.size());
 		}
 		if (type_ == STRING) {
-			PyObject *value = PyTuple_GetItem(valueTuple, i);
-			PyObject *vr = PyTuple_GetItem(vrTuple, i);
 			ValueDefString newValue;
 			if (value != 0) {
-				newValue.value = PyUnicode_AsUTF8(value);
-				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output = %f!",newValue.value);
+				newValue.value = PyUnicode_AsUTF8(value); // not be deallocated.
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: value = %s!", newValue.value);
 			}
 			if (vr != 0) {
 				newValue.vr = PyLong_AsLong(vr);
+				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "new output: vr = %u ", newValue.vr);
 			}
 			comp->strValues.push_back(newValue);
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Num output elem = %d!",comp->strValues.size());
+			PrintPyOutErr(c,comp,catcher);
 		}
+		PrintPyOutErr(c,comp,catcher);
+		Py_DECREF(value);   //ok
+		Py_DECREF(vr);      //ok
 	}
-	Py_DECREF(valueTuple);
-	Py_DECREF(vrTuple);
+	Py_DECREF(valueTuple); //ok /* No longer interested in valueTuple, it might     */
+						  /* get deallocated here but we shouldn't care. */
+	Py_DECREF(vrTuple);  //ok
 }
 
 //
 void UpdateInputVariables(fmiComponent c, ModelInstance* comp, PyObject* myModule)
 {
 	//set real variables
-	PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"SetReal");
+	PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"SetReal"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Creating tuple for real array...");
 	PyObject *args = BuildTuple(c,comp,REAL);
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python SetReal");
-	PyObject_CallObject(myFunction, args);
+	PyObject *out = PyObject_CallObject(myFunction, args); //New reference.
 
-	Py_DECREF(args);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(args); //ok
+	Py_DECREF(myFunction); //ok
 
 	//set int variables
-	myFunction = PyObject_GetAttrString(myModule,(char*)"SetInteger");
+	myFunction = PyObject_GetAttrString(myModule,(char*)"SetInteger"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Creating tuple for integer array...");
 	args = BuildTuple(c,comp,INTEGER);
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python SetInteger");
-	PyObject_CallObject(myFunction, args);
+	out = PyObject_CallObject(myFunction, args); //New reference.
 
-	Py_DECREF(args);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(args); //ok
+	Py_DECREF(myFunction);  //ok
 
-	//set string variables
-	myFunction = PyObject_GetAttrString(myModule,(char*)"SetBoolean");
+	//set boolean variables
+	myFunction = PyObject_GetAttrString(myModule,(char*)"SetBoolean"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Creating tuple for boolean array...");
 	args = BuildTuple(c,comp,BOOL);
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python SetBoolean");
-	PyObject_CallObject(myFunction, args);
+	out = PyObject_CallObject(myFunction, args); //New reference.
 
-	Py_DECREF(args);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(args); //ok
+	Py_DECREF(myFunction); //ok
 
 	//set string variables
-	myFunction = PyObject_GetAttrString(myModule,(char*)"SetString");
+	myFunction = PyObject_GetAttrString(myModule,(char*)"SetString"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Creating tuple for string array...");
 	args = BuildTuple(c,comp,STRING);
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python SetString");
-	PyObject_CallObject(myFunction, args);
+	out = PyObject_CallObject(myFunction, args); //New reference.
 
-	Py_DECREF(args);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(args);   //ok
+	Py_DECREF(myFunction); //ok
 }
 
 
 //
-void UpdateOutputVariables(fmiComponent c, ModelInstance* comp, PyObject* myModule)
+void UpdateOutputVariables(fmiComponent c, ModelInstance* comp, PyObject* myModule,
+							PyObject *catcher)
 {
 	//set real variables
-	PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"GetReal");
+	PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"GetReal"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python GetReal");
-	PyObject *out = PyObject_CallObject(myFunction, 0);
-	RecoverFromTuples(c,comp,out,REAL);
+	PyObject *out = PyObject_CallObject(myFunction, 0); //New reference.
+	RecoverFromTuples(c,comp,catcher,out,REAL);
 
-	//Py_DECREF(out);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(myFunction); //ok
 
 	//set int variables
-	myFunction = PyObject_GetAttrString(myModule,(char*)"GetInteger");
+	myFunction = PyObject_GetAttrString(myModule,(char*)"GetInteger"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python GetInteger");
-	out = PyObject_CallObject(myFunction, 0);
-	RecoverFromTuples(c,comp,out,INTEGER);
+	out = PyObject_CallObject(myFunction, 0); //New reference.
+	RecoverFromTuples(c,comp,catcher,out,INTEGER);
 
-	Py_DECREF(out);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(myFunction); //ok
 
 	//set string variables
-	myFunction = PyObject_GetAttrString(myModule,(char*)"GetBoolean");
+	myFunction = PyObject_GetAttrString(myModule,(char*)"GetBoolean"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python GetBoolean");
-	out = PyObject_CallObject(myFunction, 0);
-	RecoverFromTuples(c,comp,out,BOOL);
+	out = PyObject_CallObject(myFunction, 0); //New reference.
+	RecoverFromTuples(c,comp,catcher,out,BOOL);
 
-	Py_DECREF(out);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(myFunction); //ok
 
 	//set string variables
-	myFunction = PyObject_GetAttrString(myModule,(char*)"GetString");
+	myFunction = PyObject_GetAttrString(myModule,(char*)"GetString"); //New reference.
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling python GetString");
-	out = PyObject_CallObject(myFunction, 0);
-	RecoverFromTuples(c,comp,out,STRING);
+	out = PyObject_CallObject(myFunction, 0); //New reference.
+	RecoverFromTuples(c,comp,catcher,out,STRING);
 
-	Py_DECREF(out);
-	Py_DECREF(myFunction);
+	Py_DECREF(out); //ok
+	Py_DECREF(myFunction);  //ok
 }
 
 
@@ -358,9 +379,10 @@ fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInf
 		"Program Full Path: %s\nPath: %s\nVersion: %s\nPlatform: %s\nCompiler: %s\n" +
 		"Build Info: %s\nPython Home: %s\n";
 	comp->functions.logger(c, comp->instanceName, fmiOK, "log",headerString.c_str(),
-		Py_GetProgramName(),Py_GetPrefix(),Py_GetExecPrefix(),Py_GetProgramFullPath(),
-		Py_GetPath(),Py_GetVersion(),Py_GetPlatform(),Py_GetCompiler(),
-		Py_GetBuildInfo(),Py_GetPythonHome());
+		narrow(Py_GetProgramName()).c_str(),narrow(Py_GetPrefix()).c_str(),
+		narrow(Py_GetExecPrefix()).c_str(),narrow(Py_GetProgramFullPath()).c_str(),
+		narrow(Py_GetPath()).c_str(),Py_GetVersion(),Py_GetPlatform(),Py_GetCompiler(),
+		Py_GetBuildInfo(),narrow(Py_GetPythonHome()).c_str());
 
    //Check if python path is ok, there is a bug in the Py_Initialize and it will
    //close everthing if using a invalid python path
@@ -378,21 +400,23 @@ fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInf
 
 	if (Py_IsInitialized()) {
 		//prepare to collect python outputs and errors
-		PyObject *pModule = PyImport_AddModule("__main__");
-		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+		PyObject *pModule = PyImport_AddModule("__main__"); //Borrowed reference.
+		Py_INCREF(pModule);
+		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule); //New reference.
 
 		try {
 			//Set path to source files
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Setting path ..\\..\\sources");
-			PyObject* myPath = PySys_GetObject("path");
-			PyObject* myPathString = PyUnicode_FromString((char*)"..\\..\\sources");
-			int res = PyList_Append(myPath, myPathString);
+			PyObject* myPath = PySys_GetObject("path"); //Borrowed reference.
+			Py_INCREF(myPath);
+			PyObject* myPathString = PyUnicode_FromString((char*)"..\\..\\sources"); //New reference.
+			PyList_Append(myPath, myPathString);
 
 			//Run initialize module
-			PyObject* myModuleString = PyUnicode_FromString((char*)"initialize");
+			PyObject* myModuleString = PyUnicode_FromString((char*)"initialize"); //New reference.
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log",
 											"Importing python initialize module...");
-			PyObject* myModule = PyImport_Import(myModuleString);
+			PyObject* myModule = PyImport_Import(myModuleString); //New reference.
 			PrintPyOutErr(c,comp,catcher);
 
 			if (myModule != 0) {
@@ -403,24 +427,24 @@ fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInf
 
 				//run initialize main
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
-				PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+				PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main"); //New reference.
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
-				PyObject_CallObject(myFunction, 0);
+				PyObject *out = PyObject_CallObject(myFunction, 0); //New reference.
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Terminou de chamar main()");
 				PrintPyOutErr(c,comp,catcher);
 
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
-				UpdateOutputVariables(c,comp,myModule);
+				UpdateOutputVariables(c,comp,myModule,catcher);
 				PrintPyOutErr(c,comp,catcher);
 
 				// Clean up
-				//Py_DECREF(result);
-				Py_DECREF(myFunction);
-				//Py_DECREF(myModule);
+				Py_DECREF(out); //ok
+				Py_DECREF(myFunction);  //ok
+				//Py_DECREF(myModule);  //outro vai ter que fazer isso
 			}
-			Py_DECREF(myModuleString);
-			//Py_DECREF(myPath);   // não limpar o path, da erro
-			Py_DECREF(myPathString);
+			Py_DECREF(myModuleString); //ok
+			Py_DECREF(myPath);   // não limpar o path, da erro
+			Py_DECREF(myPathString); //ok
 			//Setting config for time event step
 			eventInfo->upcomingTimeEvent   = fmiTrue;
 			eventInfo->nextEventTime       = 1 + comp->time;
@@ -442,9 +466,9 @@ fmiStatus initialize(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventInf
 		if (pModule == 0) {
 			comp->functions.logger(c, comp->instanceName, fmiError, "log", "why??");
 		}
+		Py_XDECREF(catcher); //ok
+		Py_DECREF(pModule);  //ok
 	}
-	//Py_DECREF(catcher);
-	//Py_DECREF(pModule);
 	return fmiOK;
 }
 //------------------------------------------------------------------------------
@@ -460,14 +484,15 @@ fmiStatus eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventIn
 {
 	if (Py_IsInitialized()) {
 		//prepare to collect python outputs and errors
-		PyObject *pModule = PyImport_AddModule("__main__");
-		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+		PyObject *pModule = PyImport_AddModule("__main__"); //Borrowed reference.
+		Py_INCREF(pModule);
+		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule); //New reference.
 
 		try {
 			PyObject* myModuleString = PyUnicode_FromString((char*)"eventUpdate");
 
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Importing EventUpdate python module...");
-			PyObject* myModule = PyImport_Import(myModuleString);
+			PyObject* myModule = PyImport_Import(myModuleString); //New reference.
 			PrintPyOutErr(c,comp,catcher);
 
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Input Variables...");
@@ -476,26 +501,25 @@ fmiStatus eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventIn
 			PrintPyOutErr(c,comp,catcher);
 
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Getting python main() function...");
-			PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+			PyObject* myFunction = PyObject_GetAttrString(myModule,(char*)"main"); //New reference.
 
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Calling function main()");
 			//buid tuple with args
-			PyObject* stateTuple = PyTuple_New(1);
-			PyTuple_SetItem(stateTuple, 0, comp->stateObj);
+			PyObject* stateTuple = PyTuple_New(1); // New reference.
+			PyTuple_SetItem(stateTuple, 0, comp->stateObj); // “steals” a reference to o.
 			//call eventUpdate.main(state)
-			PyObject_CallObject(myFunction, stateTuple);
+			PyObject *out = PyObject_CallObject(myFunction, stateTuple); //New reference.
 			PrintPyOutErr(c,comp,catcher);
 
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Updating Output Variables...");
-			UpdateOutputVariables(c,comp,myModule);
+			UpdateOutputVariables(c,comp,myModule,catcher);
 			PrintPyOutErr(c,comp,catcher);
 
 			// Clean up
-			Py_DECREF(myFunction);
-			//Py_DECREF(myModule);
-			Py_DECREF(myModuleString);
-			//Py_DECREF(catcher);
-			//Py_DECREF(pModule);
+			Py_DECREF(out); //ok
+			Py_DECREF(myFunction); //ok
+			Py_DECREF(myModule); //ok
+			Py_DECREF(myModuleString); //ok
 		}
 		catch(...)
 		{
@@ -503,10 +527,11 @@ fmiStatus eventUpdate(fmiComponent c, ModelInstance* comp, fmiEventInfo* eventIn
 			PrintPyOutErr(c, comp,catcher);
 			eventInfo->terminateSimulation = fmiTrue;
 			Py_XDECREF(catcher);
-			//Py_XDECREF(pModule);
+			Py_XDECREF(pModule);
 			return fmiError;
 		}
-
+		Py_XDECREF(catcher); //ok
+		Py_XDECREF(pModule);
 	}
 	//Setting config for time event step
 	eventInfo->upcomingTimeEvent   = fmiTrue;
@@ -521,41 +546,39 @@ fmiStatus Finalize(fmiComponent c, ModelInstance* comp)
 {
 	if (Py_IsInitialized()) {
 		//prepare to collect python outputs and errors
-		PyObject *pModule = PyImport_AddModule("__main__");
-		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule);
+		PyObject *pModule = PyImport_AddModule("__main__");  //Borrowed reference.
+		Py_INCREF(pModule);
+		PyObject *catcher = InitializePythonStdoutErrRedirect(pModule); //New reference.
 
 		try {
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log", "Finalizing Python");
 			PyObject* myModuleString = PyUnicode_FromString((char*)"finalize");
 			comp->functions.logger(c,comp->instanceName, fmiOK, "log",
 											"Importing finalize python module...");
-			PyObject* myModule = PyImport_Import(myModuleString);
+			PyObject* myModule = PyImport_Import(myModuleString); //New reference.
 			PrintPyOutErr(c,comp,catcher);
 
 			if (myModule != 0) {
 				//run finalize main
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Getting python main() function...");
-				PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main");
+				PyObject *myFunction = PyObject_GetAttrString(myModule,(char*)"main"); //New reference.
 				PrintPyOutErr(c,comp,catcher);
 
 				comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Calling function main()");
-
 				//buid tuple with args
-				PyObject* stateTuple = PyTuple_New(1);
-				PyTuple_SetItem(stateTuple, 0, comp->stateObj);
+				PyObject* stateTuple = PyTuple_New(1); // New reference.
+				PyTuple_SetItem(stateTuple, 0, comp->stateObj); // “steals” a reference to o.
 				//call finalize.main(state)
-				PyObject_CallObject(myFunction, stateTuple);
+				PyObject *out = PyObject_CallObject(myFunction, stateTuple); //New reference.
 				PrintPyOutErr(c,comp,catcher);
 
 				// Clean up
-				//Py_DECREF(result);
-				//Py_DECREF(myModule);
-				Py_DECREF(myFunction);
+				Py_DECREF(out); //ok
+				Py_DECREF(myFunction); //ok
 			}
-			Py_DECREF(myModuleString);
-			//Py_DECREF(catcher);
-			//Py_DECREF(pModule);
-			Py_DECREF(comp->stateObj); // free the initialized python state
+			Py_DECREF(myModuleString); //ok
+			Py_DECREF(myModule); //ok
+			Py_DECREF(comp->stateObj); // free the initialized python state   ok
 			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "Finalizing embedded python interface");
 			//Py_Finalize();
 
@@ -564,11 +587,13 @@ fmiStatus Finalize(fmiComponent c, ModelInstance* comp)
 			comp->functions.logger(c, comp->instanceName, fmiError, "log", "Error in python finalization interface ");
 			PrintPyOutErr(c,comp,catcher);
 			Py_XDECREF(catcher);
-			//Py_XDECREF(pModule);
+			Py_XDECREF(pModule);
 			//Py_Finalize();
 			return fmiError;
 		}
-    }
+		Py_XDECREF(catcher); //ok
+		Py_XDECREF(pModule); //ok
+	}
 	return fmiOK;
 }
 //------------------------------------------------------------------------------

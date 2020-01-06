@@ -70,8 +70,8 @@
         <Icon_MainIcon>$(BDS)\bin\cbuilder_PROJECTICON.ico</Icon_MainIcon>
         <UWP_CppLogo44>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_44.png</UWP_CppLogo44>
         <UWP_CppLogo150>$(BDS)\bin\Artwork\Windows\UWP\cppreg_UwpDefault_150.png</UWP_CppLogo150>
-        <IncludePath>..\TesteBuilderDLL\;..\GeneratorFMU\;E:\FMU\TesteBuilderDLL\;$(IncludePath)</IncludePath>
-        <ILINK_LibraryPath>..\TesteBuilderDLL\;..\GeneratorFMU\;E:\FMU\TesteBuilderDLL\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <IncludePath>..\GeneratorFMU\;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>..\GeneratorFMU\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
         <SanitizedProjectName>GenerateFMU</SanitizedProjectName>
         <VerInfo_Locale>1046</VerInfo_Locale>
         <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
@@ -82,7 +82,6 @@
         <DCC_Namespace>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;$(DCC_Namespace)</DCC_Namespace>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
-        <VerInfo_Keys>CompanyName=;FileDescription=$(MSBuildProjectName);FileVersion=1.0.0.0;InternalName=;LegalCopyright=;LegalTrademarks=;OriginalFilename=;ProgramID=com.embarcadero.$(MSBuildProjectName);ProductName=$(MSBuildProjectName);ProductVersion=1.0.0.0;Comments=</VerInfo_Keys>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Manifest_File>$(BDS)\bin\default_app.manifest</Manifest_File>
         <BCC_PCHName_Clang>GenerateFMUPCH1.h</BCC_PCHName_Clang>
@@ -118,6 +117,8 @@
         <AppEnableRuntimeThemes>true</AppEnableRuntimeThemes>
         <LinkPackageImports>rtl.bpi;vcl.bpi</LinkPackageImports>
         <AppDPIAwarenessMode>PerMonitor</AppDPIAwarenessMode>
+        <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
+        <VerInfo_Locale>1033</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2)'!=''">
         <Defines>NDEBUG;$(Defines)</Defines>
@@ -177,55 +178,11 @@
                     <Source Name="MainSource">GenerateFMU.cpp</Source>
                 </Source>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\DataExplorerService260.bpl">Data Explorer Reusable Services</Excluded_Packages>
-                    <Excluded_Packages Name="dclFireDAC260.bpl">Embarcadero FireDAC Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclcommon260.bpl">Embarcadero Common Design Resources</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcldb260.bpl">Embarcadero Database Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclstd260.bpl">Embarcadero Standard Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclbindcomp260.bpl">Embarcadero LiveBindings Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\ExpertsUI260.bpl">Embarcadero Experts UI Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclmid260.bpl">Embarcadero MyBase DataAccess Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclnet260.bpl">Embarcadero Internet Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\ExpertsCreators260.bpl">Embarcadero Experts Creators Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcldbxdrivers260.bpl">Embarcadero Driver Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\DataExplorerDBXPluginInt260.bpl">DBExpress InterBase Data Explorer Integration</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclDBXDriversInt260.bpl">Embarcadero Intro Driver Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcldbx260.bpl">Embarcadero dbExpress Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclsoap260.bpl">Embarcadero SOAP Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclfmxstd260.bpl">Embarcadero FMX Standard Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclRESTComponents260.bpl">Embarcadero REST-Library Components (Designtime)</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclIndyCore260.bpl">Indy 10 Core Design Time</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclsmpedit260.bpl">Embarcadero Editor Script Enhancements</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcldsnapxml260.bpl">Embarcadero XML Transform Provider Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclxml260.bpl">Embarcadero XML Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclbcbsmp260.bpl">C++Builder Sample Components Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcltethering260.bpl">Embarcadero - Tethering Component Editors</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\DataExplorerFireDACPlugin260.bpl">FireDAC Data Explorer Integration</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclBindCompFireDAC260.bpl">LiveBinding Expression Components FireDac</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclFMXFireDAC260.bpl">Embarcadero FMX FireDAC Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclVclFireDAC260.bpl">Embarcadero VCL FireDAC Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\applet260.bpl">Embarcadero Control Panel Applet Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcl31w260.bpl">Delphi 1.0 Compatibility Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclsmp260.bpl">Embarcadero Sample Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dcltouch260.bpl">Embarcadero Touch Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclappanalytics260.bpl">Embarcadero Usertility Analytics Component</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclbindcompvcl260.bpl">Embarcadero LiveBindings Components VCL</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclnetwiz260.bpl">Embarcadero Internet Server Wizards</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclvcldb260.bpl">Embarcadero VCL Database Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\MobileWizardExpert260.bpl">Embarcadero Mobile Wizard Help</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclnetdb260.bpl">Embarcadero Internet DB Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\DataExplorerDBXPlugin260.bpl">DBExpress Data Explorer Integration</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclbindcompdbx260.bpl">LiveBindings Expression Components DbExpress</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclmcn260.bpl">Embarcadero DataSnap Connection Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclsoapmidas260.bpl">Embarcadero SOAP Midas Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclsoapserver260.bpl">Embarcadero SOAP Server Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\fmxstyledesigner260.bpl">Embarcadero Style Designer Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\bcbie260.bpl">Embarcadero C++Builder Internet Explorer Components Package</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\DUnitXIDEExpert260.bpl">Embarcadero Unit Testing IDE Package</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\gitide260.bpl">Embarcadero Git Integration</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\hgide260.bpl">Embarcadero Mercurial Integration</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\svnide260.bpl">Embarcadero Subversion Integration</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclbindcompfmx260.bpl">Embarcadero LiveBindings Components FireMonkey</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcltethering260.bpl">Embarcadero - Tethering Component Editors</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclact260.bpl">Embarcadero ActionBar Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclemacsedit260.bpl">Embarcadero Editor Emacs Enhancements</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclmlwiz260.bpl">Embarcadero Markup Language Wizards</Excluded_Packages>
@@ -233,13 +190,37 @@
                     <Excluded_Packages Name="$(BDSBIN)\dclshare260.bpl">Embarcadero ShareContract Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclwinx260.bpl">Embarcadero WinX Controls</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\samplevisualizers260.bpl">Embarcadero Sample Debugger Visualizers</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclado260.bpl">Embarcadero ADO DB Components</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclie260.bpl">Internet Explorer Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\applet260.bpl">Embarcadero Control Panel Applet Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclappanalytics260.bpl">Embarcadero Usertility Analytics Component</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclbindcompvcl260.bpl">Embarcadero LiveBindings Components VCL</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclnetwiz260.bpl">Embarcadero Internet Server Wizards</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclvcldb260.bpl">Embarcadero VCL Database Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcl31w260.bpl">Delphi 1.0 Compatibility Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclsmp260.bpl">Embarcadero Sample Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclsmpedit260.bpl">Embarcadero Editor Script Enhancements</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcltouch260.bpl">Embarcadero Touch Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclbcbsmp260.bpl">C++Builder Sample Components Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\bcbie260.bpl">Embarcadero C++Builder Internet Explorer Components Package</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\MobileWizardExpert260.bpl">Embarcadero Mobile Wizard Help</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclIPIndyImpl260.bpl">IP Abstraction Indy Implementation Design Time</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclRESTBackendComponents260.bpl">Embarcadero REST-Backend Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dcldbxcds260.bpl">Embarcadero SimpleDataset Component (DBX)</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclCloudService260.bpl">Embarcadero Cloud management components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\DataExplorerFireDACPlugin260.bpl">FireDAC Data Explorer Integration</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclBindCompFireDAC260.bpl">LiveBinding Expression Components FireDac</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclFMXFireDAC260.bpl">Embarcadero FMX FireDAC Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclVclFireDAC260.bpl">Embarcadero VCL FireDAC Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\fmxstyledesigner260.bpl">Embarcadero Style Designer Package</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclIndyProtocols260.bpl">Indy 10 Protocols Design Time</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclie260.bpl">Internet Explorer Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\DataExplorerDBXPlugin260.bpl">DBExpress Data Explorer Integration</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclbindcompdbx260.bpl">LiveBindings Expression Components DbExpress</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dcldsnapxml260.bpl">Embarcadero XML Transform Provider Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclmcn260.bpl">Embarcadero DataSnap Connection Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclsoapmidas260.bpl">Embarcadero SOAP Midas Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclsoapserver260.bpl">Embarcadero SOAP Server Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclnetdb260.bpl">Embarcadero Internet DB Components</Excluded_Packages>
+                    <Excluded_Packages Name="$(BDSBIN)\dclado260.bpl">Embarcadero ADO DB Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dclFMXtee9260.bpl">TeeChart Lite FMX Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\dcltee9260.bpl">TeeChart Standard VCL Components</Excluded_Packages>
                     <Excluded_Packages Name="$(BDSBIN)\bcboffice2k260.bpl">Embarcadero C++Builder Office 2000 Servers Package</Excluded_Packages>

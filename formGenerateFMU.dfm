@@ -38,34 +38,34 @@ object Form1: TForm1
       TabOrder = 1
       object btnGenerateFMU: TButton
         Left = 8
-        Top = 40
+        Top = 44
         Width = 89
-        Height = 25
+        Height = 29
         Caption = 'Generate FMU'
         TabOrder = 0
         OnClick = btnGenerateFMUClick
       end
       object btnAddFiles: TButton
         Left = 8
-        Top = 9
+        Top = 6
         Width = 89
-        Height = 25
+        Height = 28
         Caption = 'Add File'
         TabOrder = 1
         OnClick = btnAddFilesClick
       end
+      object rgpVersion: TRadioGroup
+        Left = 160
+        Top = 6
+        Width = 112
+        Height = 67
+        ItemIndex = 1
+        Items.Strings = (
+          'Python 2.7'
+          'Python 3.8')
+        TabOrder = 2
+      end
     end
-  end
-  object rgpVersion: TRadioGroup
-    Left = 168
-    Top = 200
-    Width = 112
-    Height = 69
-    ItemIndex = 1
-    Items.Strings = (
-      'Python 2.7'
-      'Python 3.8')
-    TabOrder = 1
   end
   object SaveDialog1: TSaveDialog
     DefaultExt = '.fmu'
