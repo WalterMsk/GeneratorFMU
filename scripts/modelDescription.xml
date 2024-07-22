@@ -5,16 +5,34 @@
   modelIdentifier="PythonModel"
   guid="{8c4e810f-3df3-4a00-8276-176fa3c9f003}"
   numberOfContinuousStates="0"
-  numberOfEventIndicators="0">
+  numberOfEventIndicators="1">
 <ModelVariables>
-  <ScalarVariable name="a" valueReference="0" description="input a" causality = "input">
+    <ScalarVariable name="PythonPath" valueReference="0" description="PythonPath" causality = "input">
+     <String start=""/>
+  </ScalarVariable>
+  <ScalarVariable name="TLn" valueReference="0" description="input a" causality = "input">
      <Real start="2"/>
   </ScalarVariable>
-  <ScalarVariable name="b" valueReference="1" description="input b" causality = "input">
-     <Integer start="1"/>
+  <ScalarVariable name="qLn" valueReference="1" description="input b" causality = "input">
+     <Real start="1"/>
   </ScalarVariable>
-  <ScalarVariable name="text" valueReference="2" description="input variable with text" causality = "input">
-     <String start=""/>
+  <ScalarVariable name="hLn" valueReference="2" description="input a" causality = "input">
+     <Real start="2"/>
+  </ScalarVariable>
+  <ScalarVariable name="TRn" valueReference="3" description="input b" causality = "input">
+     <Real start="1"/>
+  </ScalarVariable>
+  <ScalarVariable name="qRn" valueReference="4" description="input a" causality = "input">
+     <Real start="2"/>
+  </ScalarVariable>
+  <ScalarVariable name="hRn" valueReference="5" description="input b" causality = "input">
+     <Real start="1"/>
+  </ScalarVariable>
+  <ScalarVariable name="Tnp1" valueReference="1000" description="external surface temp" causality = "output">
+     <Real start="2"/>
+  </ScalarVariable>
+  <ScalarVariable name="TnpNx" valueReference="1001" description="internal surface temp" causality = "output">
+     <Real start="2"/>
   </ScalarVariable>
 </ModelVariables>
 <Implementation>

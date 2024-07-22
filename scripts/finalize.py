@@ -5,5 +5,5 @@ Created on 23/07/2018
 @author: Walter Mazuroski
 '''
 
-def main():
+def main(state):
     return str('finalized')

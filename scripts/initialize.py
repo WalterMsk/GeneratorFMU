@@ -24,31 +24,31 @@ def main():
 	#outputInt,outputIntVR
 	#outputBool,outputBoolVR
 	#outputStr,outputStrVR
-	print 'initialized'
+	print ('initialized')
     
 	
 # defining input variables
 def SetReal(value, vr):
-	global realArray;
-	global realArrayVR;
+	global realArray
+	global realArrayVR
 	realArray = list(value)
 	realArrayVR = list(vr)
 	
 def SetInteger(value, vr):
-	global intArray;
-	global intArrayVR;
+	global intArray
+	global intArrayVR
 	intArray = list(value)
 	intArrayVR = list(vr)	
 
 def SetBoolean(value, vr):
-	global boolArray;
-	global boolArrayVR;
+	global boolArray
+	global boolArrayVR
 	boolArray = list(value)
 	boolArrayVR = list(vr)	
 	
 def SetString(value, vr):
-	global stringArray;
-	global stringArrayVR;
+	global stringArray
+	global stringArrayVR
 	stringArray = list(value)
 	stringArrayVR = list(vr)
 
