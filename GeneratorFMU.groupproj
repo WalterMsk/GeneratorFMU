@@ -9,6 +9,9 @@
         <Projects Include="PythonModel.cbproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="TestPythonDLL.cbproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="PythonModel:Make">
         <MSBuild Projects="PythonModel.cbproj" Targets="Make"/>
     </Target>
+    <Target Name="TestPythonDLL">
+        <MSBuild Projects="TestPythonDLL.cbproj"/>
+    </Target>
+    <Target Name="TestPythonDLL:Clean">
+        <MSBuild Projects="TestPythonDLL.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TestPythonDLL:Make">
+        <MSBuild Projects="TestPythonDLL.cbproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="GenerateFMU;PythonModel"/>
+        <CallTarget Targets="GenerateFMU;PythonModel;TestPythonDLL"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="GenerateFMU:Clean;PythonModel:Clean"/>
+        <CallTarget Targets="GenerateFMU:Clean;PythonModel:Clean;TestPythonDLL:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="GenerateFMU:Make;PythonModel:Make"/>
+        <CallTarget Targets="GenerateFMU:Make;PythonModel:Make;TestPythonDLL:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

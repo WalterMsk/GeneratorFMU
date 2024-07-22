@@ -82,26 +82,62 @@ bool TForm1::LimpaDirSub(std::string path, int level)
     // finally, let's clean up
     closedir (pdir); // close the directory
     if (level > 0 && !rmdir(path.c_str()))// o diretório raiz nao é apagado
-        return false; // delete the directory
+		return false; // delete the directory
     return true;
 }
 //------------------------------------------------------------------------------
 
 
+std::wstring ExePath() {
+	TCHAR buffer[MAX_PATH] = { 0 };
+    GetModuleFileName( NULL, buffer, MAX_PATH );
+    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+    return std::wstring(buffer).substr(0, pos);
+}
+
 void TForm1::CreateTempFolder()
 {
 	if (DirectoryExists("temp"))
 		LimpaDirSub("temp");
-	//Creating temporary folder
-	MkDir("temp");
+	else
+		//Creating temporary folder
+		if (mkdir("temp") != 0) {
+			char* erro = new char[200];
+			sprintf(erro,"Oh dear, something went wrong with mkdir()! %s - %d\n", strerror(errno),_clearfp());
+			ShowMessage(erro);
+			return;
+		}
+
 	//binaries
-	MkDir("temp\\binaries");
+	mkdir("temp\\binaries");
 	//documentation
-	MkDir("temp\\documentation");
+	mkdir("temp\\documentation");
 	//sources
-	MkDir("temp\\sources");
-	//sources win32
- 	MkDir("temp\\binaries\\win32");
+	mkdir("temp\\sources");
+
+	std::string version;
+	if (rgpVersion->ItemIndex == 1)
+		version = "python38";
+	else  if (rgpVersion->ItemIndex == 2)
+		version = "python39";
+	else  if (rgpVersion->ItemIndex == 3)
+		version = "python311";
+	else  if (rgpVersion->ItemIndex == 4)
+		version = "python312";
+	else
+		version = "python27";
+
+	std::string platform;
+	std::string libFile;
+	if (rgpPlataform->ItemIndex == 1) {
+		platform = "win64";
+		libFile = ".a";
+	} else {
+		platform = "win32";
+		libFile = ".lib";
+	}
+	// source winXX
+	mkdir(std::string("temp\\binaries\\" + platform).c_str());
 
 	for (int i = 0; i < listFiles->Items->Count; i++) {
 		std::string file = AnsiString(listFiles->Items->Strings[i]).c_str();
@@ -110,24 +146,32 @@ void TForm1::CreateTempFolder()
 		if (fileExt == ".xml")
 			CopyFileA(file.c_str(),std::string("temp\\" + fileName).c_str(), false);
 		if (fileExt == ".dll")
-			CopyFileA(file.c_str(),std::string("temp\\binaries\\win32\\" + fileName).c_str(), false);
+			CopyFileA(file.c_str(),std::string("temp\\binaries\\" + platform + "\\" + fileName).c_str(), false);
 		if ((fileExt == ".py") || (fileExt == ".c") || (fileExt == ".cpp") || (fileExt == ".h") || (fileExt == ".idf"))
 			CopyFileA(file.c_str(),std::string("temp\\sources\\" + fileName).c_str(), false);
 		if ((fileExt == ".png") || (fileExt == ".html"))
 			CopyFileA(file.c_str(),std::string("temp\\documentation\\" + fileName).c_str(), false);
 	}
 
-	std::string version;
-	if (rgpVersion->ItemIndex == 1)
-		version = "python38";
-	else
-		version = "python27";
-	std::string fileOrigin = version + "\\bin\\PythonModel.dll";
-	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\win32\\PythonModel.dll").c_str(), false);
-	fileOrigin = version + "\\bin\\" + version + ".dll";
-	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\win32\\" + version + ".dll").c_str(), false);
-	fileOrigin = version + "\\bin\\" + version +"_xe.lib";
-	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\win32\\" + version +"_xe.lib").c_str(), false);
+	std::string fileOrigin = version + "\\" + platform + "\\PythonModel.dll";
+	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\" + platform + "\\PythonModel.dll").c_str(), false);
+	fileOrigin = version + "\\" + platform + "\\" + version + ".dll";
+	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\" + platform + "\\" + version + ".dll").c_str(), false);
+	fileOrigin = version + "\\" + platform + "\\" + version + libFile;
+	CopyFileA(fileOrigin.c_str(),std::string("temp\\binaries\\" + platform + "\\" + version + libFile).c_str(), false);
 }
 //---------------------------------------------------------------------------
+
+
+void __fastcall TForm1::rgpVersionClick(TObject *Sender)
+{
+	if (((TRadioGroup*)Sender)->ItemIndex == 0) {
+		rgpPlataform->ItemIndex = 0;
+		rgpPlataform->Enabled = false;
+	} else {
+		rgpPlataform->Enabled = true;
+    }
+}
+//---------------------------------------------------------------------------
+
 
