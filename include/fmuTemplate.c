@@ -94,7 +94,7 @@ fmiStatus setString(fmiComponent comp, fmiValueReference vr, fmiString value){
 }
 
 // fname is fmiInstantiateModel or fmiInstantiateSlave
-static fmiComponent instantiateModel(char* fname, fmiString instanceName, fmiString GUID,
+static fmiComponent instantiateModel(const char* fname, fmiString instanceName, fmiString GUID,
         fmiCallbackFunctions functions, fmiBoolean loggingOn) {
     ModelInstance* comp;
     if (!functions.logger) 
@@ -148,7 +148,7 @@ static fmiComponent instantiateModel(char* fname, fmiString instanceName, fmiStr
 }
 
 // fname is fmiInitialize or fmiInitializeSlave
-static fmiStatus init(char* fname, fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
+static fmiStatus init(const char* fname, fmiComponent c, fmiBoolean toleranceControlled, fmiReal relativeTolerance,
 	fmiEventInfo* eventInfo) {
     ModelInstance* comp = (ModelInstance *)c;
     if (invalidState(comp, fname, modelInstantiated))
@@ -171,7 +171,7 @@ static fmiStatus init(char* fname, fmiComponent c, fmiBoolean toleranceControlle
 }
 
 // fname is fmiTerminate or fmiTerminateSlave
-static fmiStatus terminate(char* fname, fmiComponent c){
+static fmiStatus terminate(const char* fname, fmiComponent c){
     ModelInstance* comp = (ModelInstance *)c;
     if (invalidState(comp, fname, modelInitialized))
          return fmiError;
@@ -181,7 +181,7 @@ static fmiStatus terminate(char* fname, fmiComponent c){
 }
 
 // fname is freeModelInstance of freeSlaveInstance
-void freeInstance(char* fname, fmiComponent c) {
+void freeInstance(const char* fname, fmiComponent c) {
     ModelInstance* comp = (ModelInstance *)c;
     if (!comp) return;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log", fname);
@@ -619,7 +619,7 @@ fmiStatus fmiDoStep(fmiComponent c, fmiReal currentCommunicationPoint,
     return state;
 }
 
-static fmiStatus getStatus(char* fname, fmiComponent c, const fmiStatusKind s) {
+static fmiStatus getStatus(const char* fname, fmiComponent c, const fmiStatusKind s) {
     const char* statusKind[3] = {"fmiDoStepStatus","fmiPendingStatus","fmiLastSuccessfulTime"};
     ModelInstance* comp = (ModelInstance *)c;
     fmiCallbackLogger log = comp->functions.logger;

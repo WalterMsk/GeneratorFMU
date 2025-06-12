@@ -435,13 +435,14 @@ fmiStatus __declspec(dllexport)
 
     //Set Python Home
     if (comp->strValues.size() > 0)
-        if (strcmp(comp->strValues[0].value, "") != 0)
-        { // first string is always the python path
-            char* pythonPath = new char(sizeof(comp->strValues[0].value));
-            strcpy(pythonPath, comp->strValues[0].value);
-            comp->functions.logger(c, comp->instanceName, fmiOK, "log", "pythonhome = %s",pythonPath);            
+		if (strcmp(comp->strValues[0].value, "") != 0)
+		{ // first string is always the python path
+			std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+			std::wstring wide = converter.from_bytes(comp->strValues[0].value);
+			const wchar_t* pythonPath = wide.c_str();
+			comp->functions.logger(c, comp->instanceName, fmiOK, "log", "pythonhome = %ls",pythonPath);
             if (pythonPath != NULL) {
-	            Py_SetPythonHome(widen(pythonPath).c_str());
+				Py_SetPythonHome(pythonPath);
             }
         }
 
