@@ -26,6 +26,7 @@ __published:	// IDE-managed Components
 	void __fastcall btnGenerateFMUClick(TObject *Sender);
 	void __fastcall btnAddFilesClick(TObject *Sender);
 	void __fastcall rgpVersionClick(TObject *Sender);
+	void __fastcall btnAddFolderClick(TObject *Sender);
 private:	// User declarations
 	void CreateTempFolder(void);
     bool LimpaDirSub(std::string path, int level=0);

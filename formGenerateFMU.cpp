@@ -7,6 +7,10 @@
 #include <string>
 #include <dir.h>
 #include <dirent.h>
+
+#pragma link "Vcl.FileCtrl"
+#include <Vcl.FileCtrl.hpp>  // Tenta incluir, pode nï¿½o existir
+
 //---------------------------------------------------------------------------
 #pragma package(smart_init)
 #pragma resource "*.dfm"
@@ -81,7 +85,7 @@ bool TForm1::LimpaDirSub(std::string path, int level)
 
     // finally, let's clean up
     closedir (pdir); // close the directory
-    if (level > 0 && !rmdir(path.c_str()))// o diretório raiz nao é apagado
+    if (level > 0 && !rmdir(path.c_str()))// o diretï¿½rio raiz nao ï¿½ apagado
 		return false; // delete the directory
     return true;
 }
@@ -90,10 +94,39 @@ bool TForm1::LimpaDirSub(std::string path, int level)
 
 std::wstring ExePath() {
 	TCHAR buffer[MAX_PATH] = { 0 };
-    GetModuleFileName( NULL, buffer, MAX_PATH );
-    std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
-    return std::wstring(buffer).substr(0, pos);
+	GetModuleFileName( NULL, buffer, MAX_PATH );
+	std::wstring::size_type pos = std::wstring(buffer).find_last_of(L"\\/");
+	return std::wstring(buffer).substr(0, pos);
 }
+//------------------------------------------------------------------------------
+
+bool IsFolder(const UnicodeString &path)
+{
+	return TDirectory::Exists(path);
+}
+//------------------------------------------------------------------------------
+
+// Funï¿½ï¿½o recursiva que percorre pasta e arquivos
+void ProcessFolderRecursively(const UnicodeString &folder, const UnicodeString &base = L"")
+{
+    UnicodeString relativePath = base.IsEmpty() ? ExtractFileName(folder) : base + L"\\" + ExtractFileName(folder);
+	// Primeiro, processa subpastas
+	for (auto& dir : TDirectory::GetDirectories(folder))
+	{
+		ProcessFolderRecursively(dir, relativePath);
+	}
+
+	// Agora, processa arquivos
+	for (auto& file : TDirectory::GetFiles(folder))
+	{
+		UnicodeString fileName = ExtractFileName(file);
+		UnicodeString folderPath = UnicodeString("temp\\sources\\") + relativePath;
+		UnicodeString fullPath = folderPath + L"\\" + fileName;
+		TDirectory::CreateDirectory(folderPath);
+		CopyFileW(file.c_str(), fullPath.c_str(), false);
+	}
+}
+//------------------------------------------------------------------------------
 
 void TForm1::CreateTempFolder()
 {
@@ -151,6 +184,12 @@ void TForm1::CreateTempFolder()
 			CopyFileA(file.c_str(),std::string("temp\\sources\\" + fileName).c_str(), false);
 		if ((fileExt == ".png") || (fileExt == ".html"))
 			CopyFileA(file.c_str(),std::string("temp\\documentation\\" + fileName).c_str(), false);
+		if (IsFolder(UnicodeString(file.c_str()))) {
+			ProcessFolderRecursively(UnicodeString(file.c_str()));
+		}
+		if (fileExt == "") {
+			CopyFileA(file.c_str(),std::string("temp\\sources\\" + fileName).c_str(), false);
+		}
 	}
 
 	std::string fileOrigin = version + "\\" + platform + "\\PythonModel.dll";
@@ -174,4 +213,13 @@ void __fastcall TForm1::rgpVersionClick(TObject *Sender)
 }
 //---------------------------------------------------------------------------
 
+
+void __fastcall TForm1::btnAddFolderClick(TObject *Sender)
+{
+	UnicodeString folder = "C:\\";
+	if (SelectDirectory("Selecione uma pasta", "", folder)) {
+		listFiles->Items->Add(folder);
+	}
+}
+//---------------------------------------------------------------------------
 

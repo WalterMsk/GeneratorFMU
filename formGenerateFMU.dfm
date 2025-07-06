@@ -36,9 +36,9 @@ object Form1: TForm1
       TabOrder = 1
       object btnGenerateFMU: TButton
         Left = 8
-        Top = 44
+        Top = 71
         Width = 89
-        Height = 29
+        Height = 26
         Caption = 'Generate FMU'
         TabOrder = 0
         OnClick = btnGenerateFMUClick
@@ -47,7 +47,7 @@ object Form1: TForm1
         Left = 8
         Top = 6
         Width = 89
-        Height = 28
+        Height = 25
         Caption = 'Add File'
         TabOrder = 1
         OnClick = btnAddFilesClick
@@ -57,7 +57,7 @@ object Form1: TForm1
         Top = 6
         Width = 93
         Height = 93
-        ItemIndex = 3
+        ItemIndex = 4
         Items.Strings = (
           'Python 2.7'
           'Python 3.8'
@@ -77,6 +77,15 @@ object Form1: TForm1
           'x86'
           'x64')
         TabOrder = 3
+      end
+      object btnAddFolder: TButton
+        Left = 8
+        Top = 38
+        Width = 89
+        Height = 26
+        Caption = 'Add Folder'
+        TabOrder = 4
+        OnClick = btnAddFolderClick
       end
     end
   end
