@@ -85,9 +85,9 @@
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
         <Manifest_File>(None)</Manifest_File>
-        <IncludePath>.\include;C:\Users\walter.mazuroski\AppData\Local\Programs\Python\Python312-32\include;$(IncludePath)</IncludePath>
-        <ILINK_LibraryPath>.\release\python312\win32\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <FinalOutputDir>.\release\python312\win32\</FinalOutputDir>
+        <IncludePath>.\include;C:\Users\walter.mazuroski\AppData\Local\Programs\Python\Python313-32\include;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>.\release\python313\win32\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <FinalOutputDir>.\release\python313\win32\</FinalOutputDir>
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
         <BCC_UseClassicCompiler>false</BCC_UseClassicCompiler>
     </PropertyGroup>
@@ -97,10 +97,10 @@
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <VerInfo_Locale>1033</VerInfo_Locale>
-        <ILINK_LibraryPath>.\release\python312\win64\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
-        <IncludePath>.\include;C:\Users\walter.mazuroski\AppData\Local\Programs\Python\Python312\include;$(IncludePath)</IncludePath>
+        <ILINK_LibraryPath>.\release\python313\win64\;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+        <IncludePath>.\include;C:\Users\walter.mazuroski\AppData\Local\Programs\Python\Python313\include;$(IncludePath)</IncludePath>
         <Manifest_File>(None)</Manifest_File>
-        <FinalOutputDir>.\release\python312\win64\</FinalOutputDir>
+        <FinalOutputDir>.\release\python313\win64\</FinalOutputDir>
         <AppDPIAwarenessMode>none</AppDPIAwarenessMode>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Win64x)'!=''">
