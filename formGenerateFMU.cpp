@@ -1,4 +1,4 @@
-//---------------------------------------------------------------------------
+﻿//---------------------------------------------------------------------------
 
 #include <vcl.h>
 #pragma hdrstop
@@ -157,6 +157,8 @@ void TForm1::CreateTempFolder()
 		version = "python311";
 	else  if (rgpVersion->ItemIndex == 4)
 		version = "python312";
+	else  if (rgpVersion->ItemIndex == 5)
+		version = "python313";
 	else
 		version = "python27";
 

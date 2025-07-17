@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'FMU Generator'
-  ClientHeight = 276
-  ClientWidth = 288
+  ClientHeight = 314
+  ClientWidth = 281
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,26 +14,31 @@ object Form1: TForm1
   object Panel1: TPanel
     Left = 0
     Top = 0
-    Width = 288
-    Height = 276
+    Width = 281
+    Height = 314
     Align = alClient
     TabOrder = 0
+    ExplicitWidth = 288
+    ExplicitHeight = 276
     object listFiles: TListBox
       Left = 1
       Top = 1
-      Width = 286
-      Height = 167
+      Width = 279
+      Height = 203
       Align = alClient
       ItemHeight = 13
       TabOrder = 0
+      ExplicitLeft = 0
+      ExplicitHeight = 191
     end
     object Panel2: TPanel
       Left = 1
-      Top = 168
-      Width = 286
-      Height = 107
+      Top = 204
+      Width = 279
+      Height = 109
       Align = alBottom
       TabOrder = 1
+      ExplicitTop = 203
       object btnGenerateFMU: TButton
         Left = 8
         Top = 71
@@ -45,7 +50,7 @@ object Form1: TForm1
       end
       object btnAddFiles: TButton
         Left = 8
-        Top = 6
+        Top = 12
         Width = 89
         Height = 25
         Caption = 'Add File'
@@ -53,25 +58,28 @@ object Form1: TForm1
         OnClick = btnAddFilesClick
       end
       object rgpVersion: TRadioGroup
-        Left = 112
+        Left = 106
         Top = 6
-        Width = 93
-        Height = 93
+        Width = 105
+        Height = 91
+        Caption = 'Python'
+        Columns = 2
         ItemIndex = 4
         Items.Strings = (
-          'Python 2.7'
-          'Python 3.8'
-          'Python 3.9'
-          'Python 3.11'
-          'Python 3.12')
+          '2.7'
+          '3.8'
+          '3.9'
+          '3.11'
+          '3.12'
+          '3.13')
         TabOrder = 2
         OnClick = rgpVersionClick
       end
       object rgpPlataform: TRadioGroup
-        Left = 212
-        Top = 6
-        Width = 67
-        Height = 93
+        Left = 218
+        Top = 12
+        Width = 54
+        Height = 85
         ItemIndex = 1
         Items.Strings = (
           'x86'
@@ -80,7 +88,7 @@ object Form1: TForm1
       end
       object btnAddFolder: TButton
         Left = 8
-        Top = 38
+        Top = 41
         Width = 89
         Height = 26
         Caption = 'Add Folder'
@@ -97,7 +105,7 @@ object Form1: TForm1
   end
   object OpenDialog1: TOpenDialog
     Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
-    Left = 104
-    Top = 200
+    Left = 16
+    Top = 120
   end
 end

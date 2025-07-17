@@ -1,0 +1,14 @@
+Para adicionar uma nova versão python ao gerador será preciso adicionar as pastas
+release\pythonXXX\win32
+release\pythonXXX\win64
+
+Copiar o arquivo .dll do diretório do python (python313.dll) para as respectivas pastas de acordo com as arquiteturas (32, 64)
+
+Obter o .lib e o .a a partir da DLL com esses comandos abaixo
+
+#64 bits
+mkexp python313.a C:\Users\walter.mazuroski\AppData\Local\Programs\Python\Python313\python313.dll
+#32 bits
+implib -aa python313_omf.lib C:\Users\walter.mazuroski\AppData\Local\Programs\Python\Python313-32\python313.dll
+
+Ajustar o formGenerateFMU para incluir no if a nova versão e também o combobox no form.
