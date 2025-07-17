@@ -27,6 +27,6 @@ __astcache/
 Temp/
 *.bak
 *.brk
-*.dll
 *.bpl
 *.res
+*.tdump
